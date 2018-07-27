@@ -8,6 +8,8 @@ import java.io.IOException;
 public class ReadMic {
 
     public static AudioFormat format = new AudioFormat(44100, 16, 2, true, false);
+    public static int BUFFER_SIZE = 44100;
+
 
     public static void main(String[] args) {
         byte[] a = getAudio();
@@ -20,7 +22,7 @@ public class ReadMic {
     }
 
     public static byte[] getAudio() {
-        byte[] data = new byte[128000];
+        byte[] data = new byte[BUFFER_SIZE];
         DataLine.Info info = new DataLine.Info(TargetDataLine.class, format);
         try {
             TargetDataLine line;
@@ -41,7 +43,6 @@ public class ReadMic {
         ByteArrayInputStream bis = new ByteArrayInputStream(audio);
         AudioInputStream audioStream = new AudioInputStream(bis, ReadMic.format, audio.length);
 
-        int BUFFER_SIZE = 128000;
         AudioFormat audioFormat = null;
         SourceDataLine sourceLine = null;
 
@@ -55,14 +56,11 @@ public class ReadMic {
         byte[] abData = new byte[BUFFER_SIZE];
         while (nBytesRead != -1) {
             try {
-                nBytesRead =
-                        audioStream.read(abData, 0, abData.length);
+                nBytesRead = audioStream.read(abData, 0, abData.length);
             } catch (IOException e) {
                 e.printStackTrace();
             }
-
-            if (nBytesRead >= 0) {
-                int nBytesWritten = sourceLine.write(abData, 0, nBytesRead);
+            if (nBytesRead >= 0) { int nBytesWritten = sourceLine.write(abData, 0, nBytesRead);
             }
         }
     }
