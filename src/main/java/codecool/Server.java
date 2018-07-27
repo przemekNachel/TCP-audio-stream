@@ -28,7 +28,7 @@ public class Server {
             try {
                 Socket socket = serverSocket.accept();
                 InputStream is = socket.getInputStream();
-                byte[] buf = new byte[128000];
+                byte[] buf = new byte[ReadMic.BUFFER_SIZE];
                 is.read(buf, 0, buf.length);
                 ReadMic.playSound(buf);
             } catch (IOException e) {

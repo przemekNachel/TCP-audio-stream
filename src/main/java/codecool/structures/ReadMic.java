@@ -8,7 +8,7 @@ import java.io.IOException;
 public class ReadMic {
 
     public static AudioFormat format = new AudioFormat(44100, 16, 2, true, false);
-    public static int BUFFER_SIZE = 44100;
+    public static int BUFFER_SIZE = 1024;
 
 
     public static void main(String[] args) {
