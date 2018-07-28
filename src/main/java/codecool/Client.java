@@ -24,7 +24,8 @@ public class Client {
             try {
                 Socket socket = new Socket(address, port);
                 OutputStream os = socket.getOutputStream();
-                os.write(getAudio());
+                byte[] audio = getAudio();
+                os.write(audio);
                 os.close();
             } catch (IOException e) {
                 e.printStackTrace();

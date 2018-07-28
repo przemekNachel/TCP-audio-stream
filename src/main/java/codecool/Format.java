@@ -7,6 +7,6 @@ import java.io.IOException;
 
 public class Format {
 
-    public static AudioFormat format = new AudioFormat(44100, 8, 1, true, false);
-    public static int BUFFER_SIZE = 2048;
+    public static AudioFormat format = new AudioFormat(22050, 8, 1, true, false);
+    public static int BUFFER_SIZE = 4096;
 }

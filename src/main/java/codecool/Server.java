@@ -14,6 +14,7 @@ public class Server {
 
     private ServerSocket serverSocket;
     byte[] audio = new byte[Format.BUFFER_SIZE];
+    byte[] buf = new byte[Format.BUFFER_SIZE];
 
     public Server(int port) {
         try {
@@ -33,12 +34,15 @@ public class Server {
             InputStream is;
             try {
                 Socket socket = serverSocket.accept();
-                notify();
                 is = socket.getInputStream();
+                System.arraycopy(audio, 0, buf, 0, audio.length);
+                notify();
+                wait();
                 audio = new byte[Format.BUFFER_SIZE];
                 is.read(audio, 0,audio.length);
-                wait();
                 is.close();
+
+
             } catch (IOException e) {
                 e.printStackTrace();
             } catch (Exception e) {
@@ -48,22 +52,26 @@ public class Server {
     }
 
     public synchronized void playSound () {
-        AudioInputStream audioStream = new AudioInputStream(new ByteArrayInputStream(audio), Format.format, audio.length);
-        SourceDataLine sourceLine = null;
         notify();
+        try {
+            wait();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        AudioInputStream audioStream = new AudioInputStream(new ByteArrayInputStream(buf), Format.format, buf.length);
+        SourceDataLine sourceLine = null;
         try {
             sourceLine = AudioSystem.getSourceDataLine(Format.format);
             sourceLine.open(Format.format);
             sourceLine.start();
-            wait();
         } catch (LineUnavailableException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
             e.printStackTrace();
         }
 
         int nBytesRead = 1;
         byte[] abData = new byte[Format.BUFFER_SIZE];
+
+
         while (nBytesRead != -1) {
             try {
                 nBytesRead = audioStream.read(abData, 0, abData.length);
@@ -72,6 +80,7 @@ public class Server {
                 e.printStackTrace();
             }
         }
+
 
     }
 
