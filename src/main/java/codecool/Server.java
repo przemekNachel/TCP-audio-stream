@@ -1,9 +1,8 @@
 package codecool;
 
-import codecool.structures.ReadMic;
-
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.SourceDataLine;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -14,6 +13,7 @@ import java.net.Socket;
 public class Server {
 
     private ServerSocket serverSocket;
+    byte[] audio = new byte[Format.BUFFER_SIZE];
 
     public Server(int port) {
         try {
@@ -23,18 +23,22 @@ public class Server {
         }
     }
 
-    public static void main(String[] args) {
-        new Server(7575).start();
+    private void start() {
+        new ServerThread(this, "read").start();
+        new ServerThread(this, "play").start();
     }
 
-    private void start() {
+    public synchronized void getSound() {
         while (true) {
+            InputStream is;
             try {
                 Socket socket = serverSocket.accept();
-                InputStream is = socket.getInputStream();
-                byte[] buf = new byte[ReadMic.BUFFER_SIZE];
-                is.read(buf, 0, buf.length);
-                playSound(buf);
+                notify();
+                is = socket.getInputStream();
+                audio = new byte[Format.BUFFER_SIZE];
+                is.read(audio, 0,audio.length);
+                wait();
+                is.close();
             } catch (IOException e) {
                 e.printStackTrace();
             } catch (Exception e) {
@@ -43,17 +47,23 @@ public class Server {
         }
     }
 
-    public static void playSound (byte[] audio) throws Exception {
-
-        ByteArrayInputStream bis = new ByteArrayInputStream(audio);
-        AudioInputStream audioStream = new AudioInputStream(bis, ReadMic.format, audio.length);
-        SourceDataLine sourceLine = AudioSystem.getSourceDataLine(ReadMic.format);
-
-        sourceLine.open(ReadMic.format);
-        sourceLine.start();
+    public synchronized void playSound () {
+        AudioInputStream audioStream = new AudioInputStream(new ByteArrayInputStream(audio), Format.format, audio.length);
+        SourceDataLine sourceLine = null;
+        notify();
+        try {
+            sourceLine = AudioSystem.getSourceDataLine(Format.format);
+            sourceLine.open(Format.format);
+            sourceLine.start();
+            wait();
+        } catch (LineUnavailableException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
 
         int nBytesRead = 1;
-        byte[] abData = new byte[ReadMic.BUFFER_SIZE];
+        byte[] abData = new byte[Format.BUFFER_SIZE];
         while (nBytesRead != -1) {
             try {
                 nBytesRead = audioStream.read(abData, 0, abData.length);
@@ -62,6 +72,11 @@ public class Server {
                 e.printStackTrace();
             }
         }
+
+    }
+
+    public static void main(String[] args) {
+        new Server(7575).start();
     }
 
 }
