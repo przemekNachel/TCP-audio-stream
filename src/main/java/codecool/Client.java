@@ -12,7 +12,7 @@ public class Client {
 
     private String address;
     private int port;
-    byte[] audio;
+    byte[] audio = new byte[Format.BUFFER_SIZE];
 
 
     public Client(String address, int port) {
@@ -25,10 +25,12 @@ public class Client {
             try {
                 Socket socket = new Socket(address, port);
                 OutputStream os = socket.getOutputStream();
-                wait();
                 os.write(audio);
                 os.close();
+
                 notify();
+                wait();
+
             } catch (IOException e) {
                 e.printStackTrace();
             } catch (InterruptedException e) {
@@ -39,6 +41,7 @@ public class Client {
 
     public synchronized void getSound() {
         while (true) {
+
             byte[] data = new byte[Format.BUFFER_SIZE];
             DataLine.Info info = new DataLine.Info(TargetDataLine.class, Format.format);
             try {
@@ -50,13 +53,17 @@ public class Client {
             } catch (LineUnavailableException ex) {
                 ex.printStackTrace();
             }
+            notify();
+
+
+
+            System.arraycopy(data, 0, audio, 0, audio.length);
             try {
                 wait();
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            audio = data;
-            notify();
+
         }
     }
 
