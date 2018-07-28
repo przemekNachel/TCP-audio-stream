@@ -12,6 +12,7 @@ public class Client {
 
     private String address;
     private int port;
+    byte[] audio;
 
 
     public Client(String address, int port) {
@@ -19,36 +20,52 @@ public class Client {
         this.port = port;
     }
 
-    public void start() {
+    public synchronized void sendSound() {
         while (true) {
             try {
                 Socket socket = new Socket(address, port);
                 OutputStream os = socket.getOutputStream();
-                byte[] audio = getAudio();
+                wait();
                 os.write(audio);
                 os.close();
+                notify();
             } catch (IOException e) {
+                e.printStackTrace();
+            } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
     }
 
-    public static byte[] getAudio() {
-        byte[] data = new byte[Format.BUFFER_SIZE];
-        DataLine.Info info = new DataLine.Info(TargetDataLine.class, Format.format);
-        try {
-            TargetDataLine line = (TargetDataLine) AudioSystem.getLine(info);
-            line.open(Format.format);
-            line.start();
-            line.read(data, 0, data.length);
-            line.close();
-        } catch (LineUnavailableException ex) {
-            ex.printStackTrace();
+    public synchronized void getSound() {
+        while (true) {
+            byte[] data = new byte[Format.BUFFER_SIZE];
+            DataLine.Info info = new DataLine.Info(TargetDataLine.class, Format.format);
+            try {
+                TargetDataLine line = (TargetDataLine) AudioSystem.getLine(info);
+                line.open(Format.format);
+                line.start();
+                line.read(data, 0, data.length);
+                line.close();
+            } catch (LineUnavailableException ex) {
+                ex.printStackTrace();
+            }
+            try {
+                wait();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            audio = data;
+            notify();
         }
-        return data;
     }
 
     public static void main(String[] args) {
         new Client("192.168.1.2", 7575).start();
+    }
+
+    private void start() {
+        new ClientThread(this, "get").start();
+        new ClientThread(this, "send").start();
     }
 }
