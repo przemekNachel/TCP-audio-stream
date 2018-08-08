@@ -4,6 +4,7 @@ import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.SourceDataLine;
+import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -25,15 +26,16 @@ public class Server {
 
     private void start() {
         new Thread(() -> getSound()).start();
-        new Thread(() -> playSound()).start();
     }
 
     public void getSound() {
         while (true) {
-            InputStream is;
+            InputStream ins;
             try {
                 Socket socket = serverSocket.accept();
-                is = socket.getInputStream();
+                ins = socket.getInputStream();
+                BufferedInputStream is = new BufferedInputStream(ins);
+
                 audio = new byte[Format.BUFFER_SIZE];
                 is.read(audio, 0,audio.length);
 
@@ -43,12 +45,6 @@ public class Server {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-        }
-    }
-
-    public void playSound () {
-        while (true) {
-
             AudioInputStream audioStream = new AudioInputStream(new ByteArrayInputStream(audio), Format.format, audio.length);
             SourceDataLine sourceLine = null;
             try {
@@ -73,6 +69,8 @@ public class Server {
             }
         }
     }
+
+
 
     public static void main(String[] args) {
         new Server(7575).start();
