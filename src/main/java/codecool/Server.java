@@ -14,7 +14,6 @@ public class Server {
 
     private ServerSocket serverSocket;
     byte[] audio = new byte[Format.BUFFER_SIZE];
-    byte[] buf = new byte[Format.BUFFER_SIZE];
 
     public Server(int port) {
         try {
@@ -29,18 +28,14 @@ public class Server {
         new Thread(() -> playSound()).start();
     }
 
-    public synchronized void getSound() {
+    public void getSound() {
         while (true) {
             InputStream is;
             try {
                 Socket socket = serverSocket.accept();
                 is = socket.getInputStream();
-                System.arraycopy(audio, 0, buf, 0, audio.length);
-                notify();
-                wait();
                 audio = new byte[Format.BUFFER_SIZE];
                 is.read(audio, 0,audio.length);
-                is.close();
 
 
             } catch (IOException e) {
@@ -51,15 +46,10 @@ public class Server {
         }
     }
 
-    public synchronized void playSound () {
+    public void playSound () {
         while (true) {
-            notify();
-            try {
-                wait();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            AudioInputStream audioStream = new AudioInputStream(new ByteArrayInputStream(buf), Format.format, buf.length);
+
+            AudioInputStream audioStream = new AudioInputStream(new ByteArrayInputStream(audio), Format.format, audio.length);
             SourceDataLine sourceLine = null;
             try {
                 sourceLine = AudioSystem.getSourceDataLine(Format.format);
