@@ -25,8 +25,8 @@ public class Server {
     }
 
     private void start() {
-        new ServerThread(this, "read").start();
-        new ServerThread(this, "play").start();
+        new Thread(() -> getSound()).start();
+        new Thread(() -> playSound()).start();
     }
 
     public synchronized void getSound() {

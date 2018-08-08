@@ -72,7 +72,7 @@ public class Client {
     }
 
     private void start() {
-        new ClientThread(this, "get").start();
-        new ClientThread(this, "send").start();
+        new Thread(() -> getSound()).start();
+        new Thread(() -> sendSound()).start();
     }
 }
