@@ -52,36 +52,36 @@ public class Server {
     }
 
     public synchronized void playSound () {
-        notify();
-        try {
-            wait();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        AudioInputStream audioStream = new AudioInputStream(new ByteArrayInputStream(buf), Format.format, buf.length);
-        SourceDataLine sourceLine = null;
-        try {
-            sourceLine = AudioSystem.getSourceDataLine(Format.format);
-            sourceLine.open(Format.format);
-            sourceLine.start();
-        } catch (LineUnavailableException e) {
-            e.printStackTrace();
-        }
-
-        int nBytesRead = 1;
-        byte[] abData = new byte[Format.BUFFER_SIZE];
-
-
-        while (nBytesRead != -1) {
+        while (true) {
+            notify();
             try {
-                nBytesRead = audioStream.read(abData, 0, abData.length);
-                if (nBytesRead >= 0) sourceLine.write(abData, 0, nBytesRead);
-            } catch (IOException e) {
+                wait();
+            } catch (InterruptedException e) {
                 e.printStackTrace();
             }
+            AudioInputStream audioStream = new AudioInputStream(new ByteArrayInputStream(buf), Format.format, buf.length);
+            SourceDataLine sourceLine = null;
+            try {
+                sourceLine = AudioSystem.getSourceDataLine(Format.format);
+                sourceLine.open(Format.format);
+                sourceLine.start();
+            } catch (LineUnavailableException e) {
+                e.printStackTrace();
+            }
+
+            int nBytesRead = 1;
+            byte[] abData = new byte[Format.BUFFER_SIZE];
+
+
+            while (nBytesRead != -1) {
+                try {
+                    nBytesRead = audioStream.read(abData, 0, abData.length);
+                    if (nBytesRead >= 0) sourceLine.write(abData, 0, nBytesRead);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
         }
-
-
     }
 
     public static void main(String[] args) {
