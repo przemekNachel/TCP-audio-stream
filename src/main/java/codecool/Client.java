@@ -20,26 +20,20 @@ public class Client {
         this.port = port;
     }
 
-    public synchronized void sendSound() {
-        while (true) {
-            try {
-                Socket socket = new Socket(address, port);
-                OutputStream os = socket.getOutputStream();
-                os.write(audio);
-                os.close();
+    public void sendSound() {
+        while (true) try {
+            Socket socket = new Socket(address, port);
+            OutputStream os = socket.getOutputStream();
+            os.write(audio);
+            os.close();
 
-                notify();
-                wait();
 
-            } catch (IOException e) {
-                e.printStackTrace();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
-    public synchronized void getSound() {
+    public void getSound() {
         while (true) {
 
             byte[] data = new byte[Format.BUFFER_SIZE];
@@ -53,17 +47,10 @@ public class Client {
             } catch (LineUnavailableException ex) {
                 ex.printStackTrace();
             }
-            notify();
 
 
 
             System.arraycopy(data, 0, audio, 0, audio.length);
-            try {
-                wait();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-
         }
     }
 
