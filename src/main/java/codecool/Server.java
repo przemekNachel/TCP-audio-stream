@@ -1,34 +1,34 @@
 package codecool;
 
-import java.io.BufferedInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
-import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.LineUnavailableException;
-import javax.sound.sampled.SourceDataLine;
+import javax.sound.sampled.*;
 
 public class Server {
     private int port;
-    private byte audio[] = new byte[Format.BUFFER_SIZE];
 
     private Server(int port)  {
         this.port = port;
     }
 
     private void start() {
+        byte tempBuffer[] = new byte[Format.BUFFER_SIZE];
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         try {
-            SourceDataLine sourceDataLine = AudioSystem.getSourceDataLine(Format.format);
-            sourceDataLine.open(Format.format);
-            sourceDataLine.start();
             ServerSocket serverSocket = new ServerSocket(port);
             Socket socket = serverSocket.accept();
-            InputStream in = new BufferedInputStream(socket.getInputStream());
-            while (in.read(audio) != -1) {
-                sourceDataLine.write(audio, 0, Format.BUFFER_SIZE);
+            BufferedOutputStream out = new BufferedOutputStream(socket.getOutputStream());
+            DataLine.Info info = new DataLine.Info(TargetDataLine.class, Format.format);
+            TargetDataLine targetDataLine = (TargetDataLine) AudioSystem.getLine(info);
+            targetDataLine.open(Format.format);
+            targetDataLine.start();
+            while (true) {
+                int cnt = targetDataLine.read(tempBuffer, 0, tempBuffer.length);
+                out.write(tempBuffer);
+                if (cnt > 0) byteArrayOutputStream.write(tempBuffer, 0, cnt);
             }
-        } catch (IOException | LineUnavailableException e) {
+        } catch (LineUnavailableException | IOException e) {
             e.printStackTrace();
         }
     }
