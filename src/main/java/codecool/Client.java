@@ -1,7 +1,6 @@
 package codecool;
 
 import java.io.*;
-import java.net.ServerSocket;
 import java.net.Socket;
 import javax.sound.sampled.*;
 
