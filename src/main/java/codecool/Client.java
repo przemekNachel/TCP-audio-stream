@@ -1,61 +1,45 @@
 package codecool;
 
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.net.Socket;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.DataLine;
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.TargetDataLine;
-import java.io.BufferedOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.net.Socket;
 
 public class Client {
 
-    private String address;
-    private int port;
-    byte[] audio = new byte[Format.BUFFER_SIZE];
+	private String host;
+	private int port;
 
+	private Client(String host, int port) {
+		this.host = host;
+		this.port = port;
+	}
 
-    public Client(String address, int port) {
-        this.address = address;
-        this.port = port;
-    }
+	private void start() {
+		byte tempBuffer[] = new byte[Format.BUFFER_SIZE];
+		ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+		try {
+			Socket socket = new Socket(host, port);
+			BufferedOutputStream out = new BufferedOutputStream(socket.getOutputStream());
+			DataLine.Info info = new DataLine.Info(TargetDataLine.class, Format.format);
+			TargetDataLine targetDataLine = (TargetDataLine) AudioSystem.getLine(info);
+			targetDataLine.open(Format.format);
+			targetDataLine.start();
+			while (true) {
+				int cnt = targetDataLine.read(tempBuffer, 0, tempBuffer.length);
+				out.write(tempBuffer);
+				if (cnt > 0) byteArrayOutputStream.write(tempBuffer, 0, cnt);
+			}
+		} catch (LineUnavailableException | IOException e) {
+			e.printStackTrace();
+		}
+	}
 
-    public void sendSound() {
-
-
-
-        while (true) try {
-            DataLine.Info info = new DataLine.Info(TargetDataLine.class, Format.format);
-            try {
-                TargetDataLine line = (TargetDataLine) AudioSystem.getLine(info);
-                line.open(Format.format);
-                line.start();
-
-                line.read(audio, 0, audio.length);
-                line.close();
-            } catch (LineUnavailableException ex) {
-                ex.printStackTrace();
-            }
-            Socket socket = new Socket(address, port);
-            OutputStream ois = socket.getOutputStream();
-            BufferedOutputStream os = new BufferedOutputStream(ois);
-
-            os.write(audio);
-            os.close();
-
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-
-    public static void main(String[] args) {
-        new Client("192.168.1.2", 7575).start();
-    }
-
-    private void start() {
-        new Thread(() -> sendSound()).start();
-    }
+	public static void main(String[] args) {
+		new Client("192.168.1.2", 7575).start();
+	}
 }
