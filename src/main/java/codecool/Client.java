@@ -21,8 +21,7 @@ public class Client {
 			SourceDataLine sourceDataLine = AudioSystem.getSourceDataLine(Format.format);
 			sourceDataLine.open(Format.format);
 			sourceDataLine.start();
-			ServerSocket serverSocket = new ServerSocket(port);
-			Socket socket = serverSocket.accept();
+			Socket socket = new Socket(host, port);
 			InputStream in = new BufferedInputStream(socket.getInputStream());
 			while (in.read(audio) != -1) {
 				sourceDataLine.write(audio, 0, Format.BUFFER_SIZE);
@@ -33,6 +32,6 @@ public class Client {
 	}
 
 	public static void main(String[] args) {
-		new Client("192.168.1.2", 7575).start();
+		new Client("192.168.1.5", 7575).start();
 	}
 }
