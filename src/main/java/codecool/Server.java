@@ -2,31 +2,30 @@ package codecool;
 
 import java.io.*;
 import java.net.ServerSocket;
-import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 import javax.sound.sampled.*;
 
 public class Server {
 
-    private int port;
+    private final int port;
     private static final List<BufferedOutputStream> clients = new ArrayList<>();
-    private byte[] tempBuffer;
-    private TargetDataLine targetDataLine;
+    private static byte[] tempBuffer;
+    private static TargetDataLine targetDataLine;
 
     private Server(int port)  {
         this.port = port;
+        tempBuffer = new byte[Format.BUFFER_SIZE];
     }
 
     private void start() {
-        tempBuffer = new byte[Format.BUFFER_SIZE];
         try {
             targetDataLine = (TargetDataLine) AudioSystem.getLine(new DataLine.Info(TargetDataLine.class, Format.format));
-            ServerSocket serverSocket = new ServerSocket(port);
             targetDataLine.open(Format.format);
             targetDataLine.start();
+            ServerSocket serverSocket = new ServerSocket(port);
             while (true) {
-                new IncomingRequestHandler(serverSocket.accept(), this).start();
+                new IncomingRequestHandler(new BufferedOutputStream(serverSocket.accept().getOutputStream())).start();
             }
         } catch (LineUnavailableException | IOException e) {
             e.printStackTrace();
@@ -39,38 +38,29 @@ public class Server {
 
     private static class IncomingRequestHandler extends Thread {
 
-        private final Socket socket;
-        private final Server server;
+        private final BufferedOutputStream out;
 
-        public IncomingRequestHandler(Socket socket, Server server) {
-            this.server = server;
-            this.socket = socket;
+        public IncomingRequestHandler(BufferedOutputStream out) {
+            this.out = out;
         }
 
         @Override
         public void run() {
-            try {
-                BufferedOutputStream out = new BufferedOutputStream(socket.getOutputStream());
 
-                synchronized (clients) {
-                    clients.add(out);
-                }
-
-                while (true) {
-                    server.targetDataLine.read(server.tempBuffer, 0, server.tempBuffer.length);
-                    clients.forEach(bufferedOutputStream -> {
-                        try {
-                            bufferedOutputStream.write(server.tempBuffer);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    });
-                }
-
-            } catch (IOException e) {
-                e.printStackTrace();
+            synchronized (clients) {
+                clients.add(out);
             }
 
+            while (true) {
+                targetDataLine.read(tempBuffer, 0, tempBuffer.length);
+                clients.forEach(bufferedOutputStream -> {
+                    try {
+                        bufferedOutputStream.write(tempBuffer);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                });
+            }
         }
     }
 }
