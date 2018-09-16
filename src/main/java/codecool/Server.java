@@ -2,14 +2,11 @@ package codecool;
 
 import java.io.*;
 import java.net.ServerSocket;
-import java.util.ArrayList;
-import java.util.List;
 import javax.sound.sampled.*;
 
 public class Server {
 
     private final int port;
-    private static final List<BufferedOutputStream> clients = new ArrayList<>();
     private static byte[] tempBuffer;
     private static TargetDataLine targetDataLine;
 
@@ -47,19 +44,13 @@ public class Server {
         @Override
         public void run() {
 
-            synchronized (clients) {
-                clients.add(out);
-            }
-
             while (true) {
                 targetDataLine.read(tempBuffer, 0, tempBuffer.length);
-                clients.forEach(bufferedOutputStream -> {
-                    try {
-                        bufferedOutputStream.write(tempBuffer);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                });
+                try {
+                    out.write(tempBuffer);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
         }
     }
