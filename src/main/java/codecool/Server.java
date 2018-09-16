@@ -2,12 +2,14 @@ package codecool;
 
 import java.io.*;
 import java.net.ServerSocket;
+import java.util.ArrayList;
 import javax.sound.sampled.*;
 
 public class Server {
 
     private final int port;
-    private static byte[] tempBuffer;
+    private static volatile byte[] tempBuffer;
+    private static ArrayList<BufferedOutputStream> clients = new ArrayList<>();
     private static TargetDataLine targetDataLine;
 
     private Server(int port)  {
@@ -21,8 +23,9 @@ public class Server {
             targetDataLine.open(Format.format);
             targetDataLine.start();
             ServerSocket serverSocket = new ServerSocket(port);
+            new Sender().start();
             while (true) {
-                new IncomingRequestHandler(new BufferedOutputStream(serverSocket.accept().getOutputStream())).start();
+                clients.add(new BufferedOutputStream(serverSocket.accept().getOutputStream()));
             }
         } catch (LineUnavailableException | IOException e) {
             e.printStackTrace();
@@ -33,24 +36,20 @@ public class Server {
         new Server(7575).start();
     }
 
-    private static class IncomingRequestHandler extends Thread {
-
-        private final BufferedOutputStream out;
-
-        public IncomingRequestHandler(BufferedOutputStream out) {
-            this.out = out;
-        }
+    private static class Sender extends Thread {
 
         @Override
         public void run() {
 
             while (true) {
                 targetDataLine.read(tempBuffer, 0, tempBuffer.length);
-                try {
-                    out.write(tempBuffer);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+                clients.forEach(out -> {
+                    try {
+                        out.write(tempBuffer);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                });
             }
         }
     }
